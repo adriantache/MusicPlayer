@@ -81,16 +81,16 @@ public class MainActivity extends AppCompatActivity {
                 previousTrack();
             }
         });
-        repeatView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        repeatView.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            public void onClick(View v) {
                 repeat = repeatView.isChecked();
                 setRepeat();
             }
         });
-        shuffleView.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        shuffleView.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            public void onClick(View v) {
                 shuffle = shuffleView.isChecked();
             }
         });
