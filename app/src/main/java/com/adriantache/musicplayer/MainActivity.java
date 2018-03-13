@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Switch;
@@ -252,8 +251,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setRepeat() {
-        if (repeat) mediaPlayer.setLooping(true);
-        else mediaPlayer.setLooping(false);
+        if (mediaPlayer != null) {
+            if (repeat) mediaPlayer.setLooping(true);
+            else mediaPlayer.setLooping(false);
+        }
     }
 
     public void playButton() {
