@@ -8,19 +8,17 @@ import android.widget.ListView;
 
 import java.util.ArrayList;
 
-public class Playlist extends AppCompatActivity {
-
-    ListView track_list;
+public class PlaylistActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_playlist);
 
-        ArrayList<Song> trackList= getIntent().getParcelableArrayListExtra("trackList");
+        ArrayList<Song> trackList = getIntent().getParcelableArrayListExtra("trackList");
 
-        track_list = findViewById(R.id.track_list);
-        CustomArrayAdapter customArrayAdapter = new CustomArrayAdapter(this,trackList);
+        ListView track_list = findViewById(R.id.track_list);
+        CustomArrayAdapter customArrayAdapter = new CustomArrayAdapter(this, trackList);
         track_list.setAdapter(customArrayAdapter);
 
         track_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -35,7 +33,10 @@ public class Playlist extends AppCompatActivity {
     //prevent music from playing when we exit without selecting a track
     @Override
     public void onBackPressed() {
-        setResult(99);
+        //define a status to determine no tracks have been selected in the PlaylistActivity
+        int STATUS_NO_TRACK_SELECTED = 99;
+
+        setResult(STATUS_NO_TRACK_SELECTED);
         finish();
     }
 }

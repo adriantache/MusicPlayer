@@ -9,41 +9,34 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    //define a status to determine no tracks have been selected in the PlaylistActivity activity
+    private static int STATUS_NO_TRACK_SELECTED = 99;
     //create an ArrayList to hold all the tracks
-    public ArrayList<Song> trackList = new ArrayList<>();
-
+    private ArrayList<Song> trackList = new ArrayList<>();
     //define views
-    ImageView play;
-    ImageView next_track;
-    ImageView previous_track;
-    Switch repeatView;
-    Switch shuffleView;
-    TextView song_title;
-    TextView artist;
-    ImageView album_art;
-    LinearLayout track_box;
-
+    private ImageView play;
+    private Switch repeatView;
+    private Switch shuffleView;
+    private TextView song_title;
+    private TextView artist;
+    private ImageView album_art;
     //keep track of current track ResID
-    int currentTrack;
-
+    private int currentTrack;
     //create a MediaPlayer
-    MediaPlayer mediaPlayer;
-
+    private MediaPlayer mediaPlayer;
     //keep track of array index, start at first position
-    int trackIndex = 0;
-
+    private int trackIndex = 0;
     //keep track of repeat and shuffle
-    boolean repeat = false;
-    boolean shuffle = false;
+    private boolean repeat = false;
+    private boolean shuffle = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,63 +45,11 @@ public class MainActivity extends AppCompatActivity {
 
         //find views
         play = findViewById(R.id.play_button);
-        next_track = findViewById(R.id.next_track);
-        previous_track = findViewById(R.id.previous_track);
         repeatView = findViewById(R.id.repeat);
         shuffleView = findViewById(R.id.shuffle);
         song_title = findViewById(R.id.song_title);
         artist = findViewById(R.id.artist);
         album_art = findViewById(R.id.album_art);
-        track_box = findViewById(R.id.track_box);
-
-        //set onClickListeners
-        play.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                playButton();
-            }
-        });
-        next_track.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                nextTrack();
-            }
-        });
-        previous_track.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                previousTrack();
-            }
-        });
-        repeatView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                repeat = repeatView.isChecked();
-                setRepeat();
-            }
-        });
-        shuffleView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                shuffle = shuffleView.isChecked();
-            }
-        });
-        track_box.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, Playlist.class);
-                intent.putParcelableArrayListExtra("trackList", trackList);
-                startActivityForResult(intent, 99);
-            }
-        });
-        album_art.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, Playlist.class);
-                intent.putParcelableArrayListExtra("trackList", trackList);
-                startActivityForResult(intent, 99);
-            }
-        });
 
         //populate track index with songs
         populateTrackList();
@@ -118,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (resultCode != 99) {
+        if (resultCode != STATUS_NO_TRACK_SELECTED) {
             trackIndex = resultCode - 1;
             nextTrack();
         }
@@ -281,6 +222,36 @@ public class MainActivity extends AppCompatActivity {
             Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
             play.setImageDrawable(play_drawable);
             if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
+        }
+    }
+
+    //set onClickListeners
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+
+        switch (id) {
+            case R.id.album_art:
+            case R.id.track_box:
+                Intent intent = new Intent(MainActivity.this, PlaylistActivity.class);
+                intent.putParcelableArrayListExtra("trackList", trackList);
+                startActivityForResult(intent, STATUS_NO_TRACK_SELECTED);
+                break;
+            case R.id.play_button:
+                playButton();
+                break;
+            case R.id.next_track:
+                nextTrack();
+                break;
+            case R.id.previous_track:
+                previousTrack();
+                break;
+            case R.id.repeat:
+                repeat = repeatView.isChecked();
+                setRepeat();
+                break;
+            case R.id.shuffle:
+                shuffle = shuffleView.isChecked();
         }
     }
 }
