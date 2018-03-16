@@ -7,7 +7,6 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -77,11 +76,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.album_art:
-                Log.i("XXXXX", "onClick: AA");
                 goToPlaylist();
                 break;
             case R.id.track_box:
-                Log.i("XXXXX", "onClick: TB");
                 goToPlaylist();
                 break;
             case R.id.play_button:
