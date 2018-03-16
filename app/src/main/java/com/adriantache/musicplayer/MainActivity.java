@@ -7,8 +7,10 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -28,6 +30,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView song_title;
     private TextView artist;
     private ImageView album_art;
+    private ImageView next_track;
+    private ImageView previous_track;
+    private LinearLayout track_box;
     //keep track of current track ResID
     private int currentTrack;
     //create a MediaPlayer
@@ -50,9 +55,51 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         song_title = findViewById(R.id.song_title);
         artist = findViewById(R.id.artist);
         album_art = findViewById(R.id.album_art);
+        track_box = findViewById(R.id.track_box);
+        next_track = findViewById(R.id.next_track);
+        previous_track = findViewById(R.id.previous_track);
+
+        //set OnClickListeners
+        album_art.setOnClickListener(this);
+        track_box.setOnClickListener(this);
+        play.setOnClickListener(this);
+        repeatView.setOnClickListener(this);
+        shuffleView.setOnClickListener(this);
+        next_track.setOnClickListener(this);
+        previous_track.setOnClickListener(this);
 
         //populate track index with songs
         populateTrackList();
+    }
+
+    //set onClickListeners
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.album_art:
+                Log.i("XXXXX", "onClick: AA");
+                goToPlaylist();
+                break;
+            case R.id.track_box:
+                Log.i("XXXXX", "onClick: TB");
+                goToPlaylist();
+                break;
+            case R.id.play_button:
+                playButton();
+                break;
+            case R.id.next_track:
+                nextTrack();
+                break;
+            case R.id.previous_track:
+                previousTrack();
+                break;
+            case R.id.repeat:
+                repeat = repeatView.isChecked();
+                setRepeat();
+                break;
+            case R.id.shuffle:
+                shuffle = shuffleView.isChecked();
+        }
     }
 
     @Override
@@ -225,33 +272,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    //set onClickListeners
-    @Override
-    public void onClick(View v) {
-        int id = v.getId();
-
-        switch (id) {
-            case R.id.album_art:
-            case R.id.track_box:
-                Intent intent = new Intent(MainActivity.this, PlaylistActivity.class);
-                intent.putParcelableArrayListExtra("trackList", trackList);
-                startActivityForResult(intent, STATUS_NO_TRACK_SELECTED);
-                break;
-            case R.id.play_button:
-                playButton();
-                break;
-            case R.id.next_track:
-                nextTrack();
-                break;
-            case R.id.previous_track:
-                previousTrack();
-                break;
-            case R.id.repeat:
-                repeat = repeatView.isChecked();
-                setRepeat();
-                break;
-            case R.id.shuffle:
-                shuffle = shuffleView.isChecked();
-        }
+    private void goToPlaylist() {
+        Intent intent = new Intent(MainActivity.this, PlaylistActivity.class);
+        intent.putParcelableArrayListExtra("trackList", trackList);
+        startActivityForResult(intent, STATUS_NO_TRACK_SELECTED);
     }
 }
