@@ -1,8 +1,12 @@
 package com.adriantache.musicplayer;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -41,6 +45,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //keep track of repeat and shuffle
     private boolean repeat = false;
     private boolean shuffle = false;
+    //define broadcast receiver for detecting headphone removal
+    private BroadcastReceiver noisyReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +75,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //populate track index with songs
         populateTrackList();
+
+        //manage audio focus
+        AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int i) {
+                switch (i) {
+                    case AudioManager.AUDIOFOCUS_LOSS:
+                        stopMediaPlayer();
+                        break;
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                        if (mediaPlayer != null) if (mediaPlayer.isPlaying()) playButton();
+                        break;
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                        if (mediaPlayer != null) if (mediaPlayer.isPlaying()) playButton();
+                        break;
+                    case AudioManager.AUDIOFOCUS_GAIN:
+                        if (mediaPlayer != null) playButton();
+                        break;
+                }
+            }
+        };
+
+        //manage NOISY (headphones removal)
+        noisyReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (mediaPlayer != null) if (mediaPlayer.isPlaying()) playButton();
+            }
+        };
+
     }
 
     //set onClickListeners
@@ -111,7 +147,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     //this may be unnecessary; stops music on destroy
     @Override
-    public void onDestroy() {
+    public void onStop() {
+        stopMediaPlayer();
+
+        super.onStop();
+    }
+
+    //stop the media player
+    private void stopMediaPlayer() {
         if (mediaPlayer != null) {
             if (mediaPlayer.isPlaying())
                 mediaPlayer.stop();
@@ -119,8 +162,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mediaPlayer.release();
             mediaPlayer = null;
         }
-
-        super.onDestroy();
     }
 
     //pause music on screen off, app switch etc.
@@ -131,6 +172,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (mediaPlayer != null) {
             if (mediaPlayer.isPlaying())
                 mediaPlayer.pause();
+
+            //remove receiver to detect headphone removal
+            unregisterReceiver(noisyReceiver);
 
             //change icon to pause and animate
             Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.pause_play);
@@ -227,6 +271,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //then create a new one
         mediaPlayer = MediaPlayer.create(this, currentTrack);
         mediaPlayer.start();
+
+        //register Intent Filter to use for detecting playback start and headphones removal
+        IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+        registerReceiver(noisyReceiver,filter);
+
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
@@ -247,12 +296,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (mediaPlayer.isPlaying()) {
                 mediaPlayer.pause();
 
+                //remove receiver to detect headphone removal
+                unregisterReceiver(noisyReceiver);
+
                 //change icon to pause and animate
                 Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.pause_play);
                 play.setImageDrawable(play_drawable);
                 if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
             } else {
                 mediaPlayer.start();
+
+                //register Intent Filter to use for detecting playback start and headphones removal
+                IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+                registerReceiver(noisyReceiver,filter);
 
                 //change icon to play and animate
                 Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
