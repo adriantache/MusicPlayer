@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onAudioFocusChange(int i) {
                 switch (i) {
                     case AudioManager.AUDIOFOCUS_LOSS:
-                        stopMediaPlayer();
+                        stopMusic();
                         break;
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                         if (mediaPlayer != null) if (mediaPlayer.isPlaying()) playButton();
@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         noisyReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                if (mediaPlayer != null) if (mediaPlayer.isPlaying()) playButton();
+                pauseMusic();
             }
         };
 
@@ -145,16 +145,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    //this may be unnecessary; stops music on destroy
+    //release the MediaPlayer on stop
     @Override
     public void onStop() {
-        stopMediaPlayer();
+        stopMusic();
 
         super.onStop();
     }
 
     //stop the media player
-    private void stopMediaPlayer() {
+    private void stopMusic() {
         if (mediaPlayer != null) {
             if (mediaPlayer.isPlaying())
                 mediaPlayer.stop();
@@ -164,11 +164,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    //pause music on screen off, app switch etc.
-    @Override
-    protected void onPause() {
-        super.onPause();
-
+    private void pauseMusic(){
         if (mediaPlayer != null) {
             if (mediaPlayer.isPlaying())
                 mediaPlayer.pause();
@@ -183,19 +179,55 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    //restart music when coming back to app
-    @Override
-    protected void onResume() {
-        super.onResume();
-
+    private void playMusic(){
         if (mediaPlayer != null) {
             mediaPlayer.start();
+
+            //register Intent Filter to use for detecting playback start and headphones removal
+            IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+            registerReceiver(noisyReceiver,filter);
+
+            //move to next track after playback
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    nextTrack();
+                }
+            });
 
             //change icon to play and animate
             Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
             play.setImageDrawable(play_drawable);
             if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
+
+            //set song details in the track box
+            updateTrackBox();
+        } else {
+            createMediaPlayer();
         }
+    }
+
+    private void updateTrackBox() {
+        //set song details in the track box
+        song_title.setText(trackList.get(trackIndex).getSongTitle());
+        artist.setText(trackList.get(trackIndex).getAuthor());
+        album_art.setImageResource(trackList.get(trackIndex).getAlbumArtResID());
+    }
+
+    //pause music on screen off, app switch etc.
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        pauseMusic();
+    }
+
+    //restart music when coming back to app
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        playMusic();
     }
 
     //function to create array of tracks to navigate
@@ -209,9 +241,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         currentTrack = trackList.get(trackIndex).getSongResID();
 
-        song_title.setText(trackList.get(trackIndex).getSongTitle());
-        artist.setText(trackList.get(trackIndex).getAuthor());
-        album_art.setImageResource(trackList.get(trackIndex).getAlbumArtResID());
+        updateTrackBox();
     }
 
     private void nextTrack() {
@@ -223,17 +253,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             trackIndex = random.nextInt(trackList.size());
         }
 
+        //get next track
         currentTrack = trackList.get(trackIndex).getSongResID();
+
+        //create the media player and start the music
         createMediaPlayer();
-
-        song_title.setText(trackList.get(trackIndex).getSongTitle());
-        artist.setText(trackList.get(trackIndex).getAuthor());
-        album_art.setImageResource(trackList.get(trackIndex).getAlbumArtResID());
-
-        //change icon to play and animate
-        Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
-        play.setImageDrawable(play_drawable);
-        if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
     }
 
     private void previousTrack() {
@@ -245,43 +269,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             trackIndex = random.nextInt(trackList.size());
         }
 
+        //get previous track
         currentTrack = trackList.get(trackIndex).getSongResID();
+
+        //create the media player and start the music
         createMediaPlayer();
-
-        song_title.setText(trackList.get(trackIndex).getSongTitle());
-        artist.setText(trackList.get(trackIndex).getAuthor());
-        album_art.setImageResource(trackList.get(trackIndex).getAlbumArtResID());
-
-        //change icon to play and animate
-        Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
-        play.setImageDrawable(play_drawable);
-        if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
     }
 
     private void createMediaPlayer() {
         //first stop the media player, if playing
-        if (mediaPlayer != null) {
-            if (mediaPlayer.isPlaying())
-                mediaPlayer.stop();
-            mediaPlayer.reset();
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
+        stopMusic();
 
         //then create a new one
         mediaPlayer = MediaPlayer.create(this, currentTrack);
-        mediaPlayer.start();
 
-        //register Intent Filter to use for detecting playback start and headphones removal
-        IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-        registerReceiver(noisyReceiver,filter);
-
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                nextTrack();
-            }
-        });
+        //start the music
+        playMusic();
     }
 
     private void setRepeat() {
@@ -294,34 +297,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void playButton() {
         if (mediaPlayer != null) {
             if (mediaPlayer.isPlaying()) {
-                mediaPlayer.pause();
-
-                //remove receiver to detect headphone removal
-                unregisterReceiver(noisyReceiver);
-
-                //change icon to pause and animate
-                Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.pause_play);
-                play.setImageDrawable(play_drawable);
-                if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
+                pauseMusic();
             } else {
-                mediaPlayer.start();
-
-                //register Intent Filter to use for detecting playback start and headphones removal
-                IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-                registerReceiver(noisyReceiver,filter);
-
-                //change icon to play and animate
-                Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
-                play.setImageDrawable(play_drawable);
-                if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
+               playMusic();
             }
         } else {
             createMediaPlayer();
-
-            //change icon to play and animate
-            Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
-            play.setImageDrawable(play_drawable);
-            if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
         }
     }
 
