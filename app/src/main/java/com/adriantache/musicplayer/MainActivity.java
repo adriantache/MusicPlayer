@@ -49,6 +49,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean shuffle = false;
     //define broadcast receiver for detecting headphone removal
     private BroadcastReceiver noisyReceiver;
+    //define audio manager to request and release audio focus
+    AudioManager audioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -278,6 +280,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (BuildConfig.DEBUG) e.printStackTrace();
             }
 
+            //remove audio focus
+            audioManager.abandonAudioFocus(audioFocusChangeListener);
 
             //change icon to pause and animate
             Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.pause_play);
@@ -290,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void playMusic() {
         if (mediaPlayer != null) {
             //request audio focus
-            AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
             int result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC,
                     AudioManager.AUDIOFOCUS_GAIN);
             if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
