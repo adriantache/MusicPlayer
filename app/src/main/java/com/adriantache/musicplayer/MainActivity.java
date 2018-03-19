@@ -24,6 +24,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     //define a status to determine no tracks have been selected in the PlaylistActivity activity
     private static int STATUS_NO_TRACK_SELECTED = 99;
+    //define audioFocusChangeListener to request and give audio focus
+    AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
     //create an ArrayList to hold all the tracks
     private ArrayList<Song> trackList = new ArrayList<>();
     //define views
@@ -77,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         populateTrackList();
 
         //manage audio focus
-        AudioManager.OnAudioFocusChangeListener audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        audioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
             @Override
             public void onAudioFocusChange(int i) {
                 switch (i) {
@@ -151,67 +153,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         stopMusic();
 
         super.onStop();
-    }
-
-    //stop the media player
-    private void stopMusic() {
-        if (mediaPlayer != null) {
-            if (mediaPlayer.isPlaying())
-                mediaPlayer.stop();
-            mediaPlayer.reset();
-            mediaPlayer.release();
-            mediaPlayer = null;
-        }
-    }
-
-    private void pauseMusic(){
-        if (mediaPlayer != null) {
-            if (mediaPlayer.isPlaying())
-                mediaPlayer.pause();
-
-            //remove receiver to detect headphone removal
-            unregisterReceiver(noisyReceiver);
-
-            //change icon to pause and animate
-            Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.pause_play);
-            play.setImageDrawable(play_drawable);
-            if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
-        }
-    }
-
-    private void playMusic(){
-        if (mediaPlayer != null) {
-            mediaPlayer.start();
-
-            //register Intent Filter to use for detecting playback start and headphones removal
-            IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-            registerReceiver(noisyReceiver,filter);
-
-            //move to next track after playback
-            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    nextTrack();
-                }
-            });
-
-            //change icon to play and animate
-            Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
-            play.setImageDrawable(play_drawable);
-            if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
-
-            //set song details in the track box
-            updateTrackBox();
-        } else {
-            createMediaPlayer();
-        }
-    }
-
-    private void updateTrackBox() {
-        //set song details in the track box
-        song_title.setText(trackList.get(trackIndex).getSongTitle());
-        artist.setText(trackList.get(trackIndex).getAuthor());
-        album_art.setImageResource(trackList.get(trackIndex).getAlbumArtResID());
     }
 
     //pause music on screen off, app switch etc.
@@ -299,7 +240,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (mediaPlayer.isPlaying()) {
                 pauseMusic();
             } else {
-               playMusic();
+                playMusic();
             }
         } else {
             createMediaPlayer();
@@ -310,5 +251,81 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Intent intent = new Intent(MainActivity.this, PlaylistActivity.class);
         intent.putParcelableArrayListExtra("trackList", trackList);
         startActivityForResult(intent, STATUS_NO_TRACK_SELECTED);
+    }
+
+    //stop the media player
+    private void stopMusic() {
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying())
+                mediaPlayer.stop();
+            mediaPlayer.reset();
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+    }
+
+    //pause the media player
+    private void pauseMusic() {
+        if (mediaPlayer != null) {
+            if (mediaPlayer.isPlaying())
+                mediaPlayer.pause();
+
+            //remove receiver to detect headphone removal
+            try {
+                unregisterReceiver(noisyReceiver);
+                noisyReceiver = null;
+            } catch (IllegalArgumentException e) {
+                if (BuildConfig.DEBUG) e.printStackTrace();
+            }
+
+
+            //change icon to pause and animate
+            Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.pause_play);
+            play.setImageDrawable(play_drawable);
+            if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
+        }
+    }
+
+    //play the selected track
+    private void playMusic() {
+        if (mediaPlayer != null) {
+            //request audio focus
+            AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            int result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN);
+            if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                return;
+            }
+
+            //start playback
+            mediaPlayer.start();
+
+            //register Intent Filter to use for detecting playback start and headphones removal
+            IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+            registerReceiver(noisyReceiver, filter);
+
+            //move to next track after playback
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    nextTrack();
+                }
+            });
+
+            //change icon to play and animate
+            Drawable play_drawable = ContextCompat.getDrawable(this, R.drawable.play_pause);
+            play.setImageDrawable(play_drawable);
+            if (play_drawable instanceof Animatable) ((Animatable) play_drawable).start();
+
+            //set song details in the track box
+            updateTrackBox();
+        }
+    }
+
+    //set song details in the track box
+    private void updateTrackBox() {
+        song_title.setText(trackList.get(trackIndex).getSongTitle());
+        artist.setText(trackList.get(trackIndex).getAuthor());
+        album_art.setImageResource(trackList.get(trackIndex).getAlbumArtResID());
     }
 }
