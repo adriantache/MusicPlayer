@@ -21,7 +21,7 @@ import java.util.List;
 
 public class CustomArrayAdapter extends ArrayAdapter<Song> {
 
-    public CustomArrayAdapter(@NonNull Context context, @NonNull List<Song> objects) {
+    CustomArrayAdapter(@NonNull Context context, @NonNull List<Song> objects) {
         super(context, 0, objects);
     }
 
@@ -36,14 +36,16 @@ public class CustomArrayAdapter extends ArrayAdapter<Song> {
         if (listItemView == null)
             listItemView = LayoutInflater.from(getContext()).inflate(R.layout.track_box, parent, false);
 
-        TextView song_title = listItemView.findViewById(R.id.song_title);
-        song_title.setText(currentSong.getSongTitle());
+        if (currentSong != null) {
+            TextView song_title = listItemView.findViewById(R.id.song_title);
+            song_title.setText(currentSong.getSongTitle());
 
-        TextView author = listItemView.findViewById(R.id.artist);
-        author.setText(currentSong.getAuthor());
+            TextView author = listItemView.findViewById(R.id.artist);
+            author.setText(currentSong.getAuthor());
 
-        ImageView imageView = listItemView.findViewById(R.id.album_art);
-        imageView.setImageResource(currentSong.getAlbumArtResID());
+            ImageView imageView = listItemView.findViewById(R.id.album_art);
+            imageView.setImageResource(currentSong.getAlbumArtResID());
+        }
 
         return listItemView;
     }

@@ -26,7 +26,7 @@ public class Song implements Parcelable{
         }
     };
 
-    public Song(Parcel in){
+    private Song(Parcel in){
         this.songResID = in.readInt();
         this.albumArtResID = in.readInt();
         this.songTitle = in.readString();
@@ -48,7 +48,7 @@ public class Song implements Parcelable{
         dest.writeString(album);
     }
 
-    public Song(int songResID, int albumArtResID, String songTitle, String author, String album) {
+    Song(int songResID, int albumArtResID, String songTitle, String author, String album) {
         this.songResID = songResID;
         this.albumArtResID = albumArtResID;
         this.songTitle = songTitle;

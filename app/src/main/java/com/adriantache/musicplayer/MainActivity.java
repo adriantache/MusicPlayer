@@ -26,6 +26,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static int STATUS_NO_TRACK_SELECTED = 99;
     //define audioFocusChangeListener to request and give audio focus
     AudioManager.OnAudioFocusChangeListener audioFocusChangeListener;
+    //define audio manager to request and release audio focus
+    AudioManager audioManager;
     //create an ArrayList to hold all the tracks
     private ArrayList<Song> trackList = new ArrayList<>();
     //define views
@@ -35,9 +37,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView song_title;
     private TextView artist;
     private ImageView album_art;
-    private ImageView next_track;
-    private ImageView previous_track;
-    private LinearLayout track_box;
     //keep track of current track ResID
     private int currentTrack;
     //create a MediaPlayer
@@ -49,11 +48,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean shuffle = false;
     //define broadcast receiver for detecting headphone removal
     private BroadcastReceiver noisyReceiver;
-    //define audio manager to request and release audio focus
-    AudioManager audioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        ImageView next_track;
+        ImageView previous_track;
+        LinearLayout track_box;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -295,8 +295,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (mediaPlayer != null) {
             //request audio focus
             audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-            int result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN);
+            int result = 0;
+            if (audioManager != null) {
+                result = audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN);
+            }
             if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 return;
             }
